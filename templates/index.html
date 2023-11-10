@@ -18,12 +18,7 @@
             margin-bottom: 20px;
             max-width: 600px;
         }
-        #image-preview {
-            max-width: 90%;
-            max-height: 400px;
-            display: block;
-            margin-top: 20px;
-        }
+
         #description {
             text-align: center;
             width: 90%;
@@ -61,6 +56,25 @@
         #drop-zone:hover {
             background-color: #f9f9f9;
         }
+
+        .preview-image-container input[type=checkbox] {
+            display: none;
+        }
+
+        .preview-image-container img {
+            max-width: 90%;
+            max-height: 400px;
+            display: block;
+            margin-top: 20px;
+            transition: max-height 0.25s ease;
+            cursor: zoom-in;
+        }
+
+        .preview-image-container input[type=checkbox]:checked ~ label > img {
+            max-height: 100vh;
+            cursor: zoom-out;
+        }
+
     </style>
 </head>
 <body>
@@ -81,23 +95,35 @@
         </span>
     </div>
 
-    <a id="image-preview-a" target="_blank">
-        <img id="image-preview" style="display:none;"></img>
-    </a>
+    <div class="preview-image-container">
+        <input type="checkbox" id="zoomCheck">
+        <label for="zoomCheck">
+            <img id="image-preview" style="display:none;"></img>
+        </label>
+    </div>
 
     <div id="description"></div>
 
     <script>
+        function onClickPrviewImage() {
+            const imagePreviewElement = document.getElementById('image-preview');
+            const newTab = window.open();
+            newTab.url = imagePreviewElement.src
+            newTab.onload = function() {
+                newTab.location.href=newTab.url
+            };
+            //newTab.document.body.style = "margin: 0px;background-color: rgb(14, 14, 14);display: flex;";
+            //newTab.document.body.innerHTML = `<img src="${imagePreviewElement.src}" style="display: block;margin: auto;">`;
+        }
+
         function previewImage() {
             const imageUrl = document.getElementById('image-url').value;
             const imagePreviewElement = document.getElementById('image-preview');
-            const imagePreviewAElement = document.getElementById('image-preview-a');
 
             // Display image preview
             if (imageUrl) {
                 imagePreviewElement.src = imageUrl;
                 imagePreviewElement.style.display = 'block';
-                imagePreviewAElement.href = imageUrl;
             }
         }
 
@@ -105,13 +131,11 @@
             const imageUrl = document.getElementById('image-url').value;
             const prompt = document.getElementById('prompt').value;
             const imagePreviewElement = document.getElementById('image-preview');
-            const imagePreviewAElement = document.getElementById('image-preview-a');
             const descriptionElement = document.getElementById('description');
 
             // Display image preview
             if (imageUrl) {
                 imagePreviewElement.src = imageUrl;
-                imagePreviewAElement.href = imageUrl;
                 imagePreviewElement.style.display = 'block';
                 descriptionElement.style.display = 'block'; // Show the description box
                 descriptionElement.innerText = "Waiting for GPT4..."
@@ -134,7 +158,6 @@
         function imagineImage() {
             let prompt = document.getElementById('prompt').value;
             const imagePreviewElement = document.getElementById('image-preview');
-            const imagePreviewAElement = document.getElementById('image-preview-a');
             const descriptionElement = document.getElementById('description');
             const simplePromptCheckbox = document.getElementById('simple-prompt');
             // Display image preview
@@ -155,7 +178,6 @@
                         // Display AI's response
                         imagePreviewElement.src = data["image_url"];
                         imagePreviewElement.style.display = 'block';
-                        imagePreviewAElement.href = data["image_url"];
                         descriptionElement.innerText = data.answer
                     } else {
                         descriptionElement.innerHTML = `<p>${data.answer}</p>`;
