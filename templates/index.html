@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Description with GPT</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        #input-container {
+            margin-bottom: 20px;
+            max-width: 600px;
+        }
+        #image-preview {
+            max-width: 90%;
+            max-height: 400px;
+            display: block;
+            margin-top: 20px;
+        }
+        #description {
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: none; /* Initially hidden */
+        }
+        button {
+            padding: 10px 20px;
+        }
+        .input-field {
+            width: 90%;
+            max-width: 600px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
+        #drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        #drop-zone:hover {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div id="drop-zone" onclick="fileInput.click()">
+        Drop or click to paste the image here
+        <input id="fileInput" type="file" style="display:none" onchange="encodeImageFileAsURL(this)"/>
+    </div>
+    <textarea class="input-field" id="image-url" placeholder="Enter image URL or base64 data here..."></textarea>
+    <textarea class="input-field" id="prompt" placeholder="Enter prompt for GPT4-Vision or DALLE-3 here..." autocomplete="on"></textarea>
+
+    <div id="input-container">
+        <button onclick="previewImage()">Preview</button>
+        <button onclick="askGPTVision()">Ask GPT-Vision</button>
+        <button onclick="imagineImage()">Imagine DALLE-3</button>
+        <span>
+            <input type="checkbox" id="simple-prompt" />
+            <label for="simple-prompt">Simple Prompt</label>
+        </span>
+    </div>
+
+    <a id="image-preview-a" target="_blank">
+        <img id="image-preview" style="display:none;"></img>
+    </a>
+
+    <div id="description"></div>
+
+    <script>
+        function previewImage() {
+            const imageUrl = document.getElementById('image-url').value;
+            const imagePreviewElement = document.getElementById('image-preview');
+            const imagePreviewAElement = document.getElementById('image-preview-a');
+
+            // Display image preview
+            if (imageUrl) {
+                imagePreviewElement.src = imageUrl;
+                imagePreviewElement.style.display = 'block';
+                imagePreviewAElement.href = imageUrl;
+            }
+        }
+
+        function askGPTVision() {
+            const imageUrl = document.getElementById('image-url').value;
+            const prompt = document.getElementById('prompt').value;
+            const imagePreviewElement = document.getElementById('image-preview');
+            const imagePreviewAElement = document.getElementById('image-preview-a');
+            const descriptionElement = document.getElementById('description');
+
+            // Display image preview
+            if (imageUrl) {
+                imagePreviewElement.src = imageUrl;
+                imagePreviewAElement.href = imageUrl;
+                imagePreviewElement.style.display = 'block';
+                descriptionElement.style.display = 'block'; // Show the description box
+                descriptionElement.innerText = "Waiting for GPT4..."
+                
+                fetch('/ask', {
+                    method: 'POST',
+                    body: new URLSearchParams({ 'image_url': imageUrl, 'prompt': prompt }),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                }).then(response => response.json()).then(data => {
+                    if (data.status === 'OK') {
+                        // Display AI's response
+                        descriptionElement.innerHTML = `<p>${data.answer}</p>`;
+                    } else {
+                        descriptionElement.innerHTML = `<p>${data.answer}</p>`;
+                    }
+                });
+            }
+        }
+
+        function imagineImage() {
+            let prompt = document.getElementById('prompt').value;
+            const imagePreviewElement = document.getElementById('image-preview');
+            const imagePreviewAElement = document.getElementById('image-preview-a');
+            const descriptionElement = document.getElementById('description');
+            const simplePromptCheckbox = document.getElementById('simple-prompt');
+            // Display image preview
+            if (prompt) {
+                if (simplePromptCheckbox.checked) {
+                    // https://platform.openai.com/docs/guides/images/prompting
+                    prompt = "I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS: " + prompt;
+                }
+                
+                descriptionElement.style.display = 'block'; // Show the description box
+                descriptionElement.innerText = "Waiting for GPT4..."
+                fetch('/imagine', {
+                    method: 'POST',
+                    body: new URLSearchParams({ 'prompt': prompt }),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                }).then(response => response.json()).then(data => {
+                    if (data.status === 'OK') {
+                        // Display AI's response
+                        imagePreviewElement.src = data["image_url"];
+                        imagePreviewElement.style.display = 'block';
+                        imagePreviewAElement.href = data["image_url"];
+                        descriptionElement.innerText = data.answer
+                    } else {
+                        descriptionElement.innerHTML = `<p>${data.answer}</p>`;
+                    }
+                });
+            }
+        }
+
+
+        function encodeImageFileAsURL(element) {
+            var file = element.files[0];
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                // Display the base64 URL in the input field
+                document.getElementById('image-url').value = reader.result;
+                // Set the image source to the base64 URL and display it
+                document.getElementById('image-preview').src = reader.result;
+                document.getElementById('image-preview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+        // Click on drop-zone to trigger hidden file input click
+        document.getElementById('drop-zone').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+        });
+        // Allow drag and drop functionality
+        document.getElementById('drop-zone').addEventListener('dragover', function(event){
+            event.preventDefault();
+        });
+        document.getElementById('drop-zone').addEventListener('drop', function(event){
+            event.preventDefault();
+            if (event.dataTransfer.files.length) {
+                document.getElementById('fileInput').files = event.dataTransfer.files;
+                encodeImageFileAsURL(document.getElementById('fileInput'));
+            }
+        });
+        // Allow paste functionality
+        window.addEventListener('paste', (event) => {
+            if (event.clipboardData && event.clipboardData.files.length) {
+                document.getElementById('fileInput').files = event.clipboardData.files;
+                encodeImageFileAsURL(document.getElementById('fileInput'));
+            }
+        });
+    </script>
+</body>
+</html>
