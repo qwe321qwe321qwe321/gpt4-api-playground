@@ -176,6 +176,7 @@
                 }).then(response => response.json()).then(data => {
                     if (data.status === 'OK') {
                         // Display AI's response
+                        imagePreviewElement.style.display = 'none';
                         imagePreviewElement.src = data["image_url"];
                         imagePreviewElement.style.display = 'block';
                         descriptionElement.innerText = data.answer
