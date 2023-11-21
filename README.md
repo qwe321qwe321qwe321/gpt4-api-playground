@@ -10,6 +10,12 @@ gpt4-vision and dalle-3 api playground.
   * If **Simple Prompt** is checked, the app will add a sentence before your prompt. ([Read More](https://platform.openai.com/docs/guides/images/prompting))
 
 # Getting Started
+
+Install dependencies:
+```
+pip install -r requirements.txt
+```
+
 Create a `.env` file and add a line:
 ```
 OPENAI_API_KEY=<your_openai_key>
